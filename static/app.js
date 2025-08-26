@@ -256,13 +256,25 @@ function stopTTS() {
 initializeTTS();
 
 // Function to display initial greeting when page loads
-function displayInitialGreeting() {
-  // Wait a moment for the page to fully load, then show greeting
-  setTimeout(() => {
-    if (!typing && !userTyping) {
-      typeText("Hello! Welcome to BRAM HOUSE. I'm ASTRID, your AI assistant. How may I help you today?", "cyan", 25);
-    }
-  }, 1000);
+async function displayInitialGreeting() {
+  // Show blinking cursor immediately while waiting for TTS
+  els.typed.textContent = "";
+  els.cursor.style.display = "block";
+  
+  // Center the cursor in the typewrap area (both horizontally and vertically)
+  els.cursor.style.position = "absolute";
+  els.cursor.style.left = "50%";
+  els.cursor.style.top = "50%";
+  els.cursor.style.transform = "translate(-50%, -50%)";
+  
+  // Wait 5 seconds for TTS to initialize properly
+  await new Promise(resolve => setTimeout(resolve, 5000));
+  
+  // TTS should be ready now, hide cursor and show greeting
+  els.cursor.style.display = "none";
+  if (!typing && !userTyping) {
+    await typeText("Hello! Welcome to BRAM HOUSE. I'm ASTRID, your AI assistant. How may I help you today?", "cyan", 25);
+  }
 }
 
 // Function to apply responsive scaling
@@ -331,6 +343,12 @@ function clamp01(x){ return Math.max(0, Math.min(1, x)); }
 
 // Typewriter effect with TTS
 async function typeText(text, colorClass="cyan", cps=20) {
+  // Wait for TTS to be ready before proceeding
+  while (!selectedVoice || !speechSynthesis) {
+    console.log('Waiting for TTS to be ready...');
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+  
   typing = true;
   els.typed.classList.remove("white","cyan");
   els.typed.classList.add(colorClass);
@@ -503,9 +521,9 @@ function formatStellarDate(d) {
   const dd = String(d.getDate()).padStart(2,"0");
   return `${yyyy.slice(0,3)}.${yyyy.slice(3)}${mm}.${dd}`;
 }
-// Pulse as HH.MM.SS (from 17:54:01 -> 17.54.01)
+// Pulse as H.MM.SS (from 17:54:01 -> 17.54.01)
 function formatPulse(d) {
-  const hh = String(d.getHours()).padStart(2,"0");
+  const hh = String(d.getHours()); // No leading zero for hours
   const mm = String(d.getMinutes()).padStart(2,"0");
   const ss = String(d.getSeconds()).padStart(2,"0");
   return `${hh}.${mm}.${ss}`;
@@ -523,7 +541,7 @@ setInterval(tickClock, 1000); // Update every second since we're showing seconds
 
 // Apply full state update
 function applyState(s){
-  els.headline.textContent = s.headline || "BRAM HOUSE";
+  els.headline.textContent = "ASTRID"; // Always show ASTRID, ignore backend headline
   els.eve.textContent = s.eve || "EVE";
   els.batteryPct.textContent = `${Math.round(s.battery_pct)}%`;
   els.loadW.textContent = `${Math.round(s.load_w)}W`;
