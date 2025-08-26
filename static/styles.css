@@ -1,0 +1,171 @@
+:root{
+  --bg:#0b0f12;
+  --hud:#3cf2e8;
+  --hud-dim:#1ea59d;
+  --white:#ffffff;
+  --cyan:#7ffdf5;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--cyan);
+  font-family:'Orbitron',system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  letter-spacing:.02em;
+}
+
+.hud-wrap{padding:24px; display:flex; flex-direction:column; gap:24px; height:100%}
+
+/* “Corner frame” look */
+.corner-frame{
+  border:2px solid var(--hud);
+  padding:14px 18px;
+  border-radius:10px;
+  position:relative;
+  box-shadow:0 0 10px rgba(60,242,232,.35), inset 0 0 18px rgba(60,242,232,.08);
+}
+.corner-frame:before,
+.module-frame:before{
+  content:"";
+  position:absolute;
+  inset:-8px;
+  border:1px solid rgba(60,242,232,.15);
+  border-radius:14px;
+  pointer-events:none;
+}
+
+.top-bar{
+  display:grid;
+  grid-template-columns: 1fr auto;
+  gap:24px;
+  align-items:center;
+}
+.headline{font-size:42px; font-weight:900; color:var(--cyan); text-shadow:0 0 12px rgba(127,253,245,.45)}
+.timebox{display:flex; gap:24px; align-items:center; font-size:16px}
+.timebox .label{color:var(--hud-dim); margin-right:8px}
+
+/* Layout main row */
+.content-row{display:grid; grid-template-columns: 280px 1fr; gap:24px; flex:1; align-items: stretch;}
+
+/* Generic module */
+.module .module-frame{
+  height:100%;
+  border:2px solid var(--hud);
+  border-radius:14px;
+  padding:18px;
+  position:relative;
+  box-shadow:0 0 14px rgba(60,242,232,.35), inset 0 0 24px rgba(60,242,232,.06);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Power module (left) */
+.power {min-height:315px; display: flex; flex-direction: column; flex: 1;}
+.battery-circle{
+  width:150px; height:150px; border:3px solid var(--hud);
+  border-radius:50%; margin:6px auto 12px; position:relative;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 0 16px rgba(60,242,232,.3), inset 0 0 30px rgba(60,242,232,.05);
+}
+.battery-pct{font-size:36px; font-weight:800}
+.battery-label{
+  position:absolute; bottom:-36px; left:0; right:0;
+  text-align:center; font-size:11px; color:var(--hud-dim); line-height:1.1
+}
+
+.dot-columns{
+  margin-top:40px;
+  display:grid; grid-template-columns:1fr 1fr; gap:26px;
+  padding:0 24px;
+}
+.dot-column{display:grid; grid-template-rows: repeat(10, 12px); gap:10px; align-content:start}
+.dot{
+  width:12px; height:12px; border:2px solid var(--hud);
+  border-radius:3px; opacity:.3; justify-self:center;
+  box-shadow:0 0 6px rgba(60,242,232,.25), inset 0 0 10px rgba(60,242,232,.08);
+}
+.dot.active{background:var(--hud); opacity:1}
+
+.watts-row{
+  display:flex; justify-content:space-between; margin-top:22px; padding:0 10px
+}
+.watts-pill{
+  border:2px solid var(--hud); border-radius:9px; padding:6px 10px; font-size:12px;
+  box-shadow:0 0 10px rgba(60,242,232,.25), inset 0 0 16px rgba(60,242,232,.06);
+}
+.mini-label{color:var(--hud-dim); margin-right:6px}
+
+/* Console (center) */
+.console .console-inner{
+  position:relative; width:100%; height:100%;
+  display:flex; flex-direction:column;
+  min-height: 0;
+  overflow: hidden;
+}
+.console-topline{
+  position:absolute; top:12px; left:18px; right:18px;
+  color:var(--cyan); opacity:.85; font-size:16px
+}
+.typewrap{
+  margin:auto;             /* keeps the whole block centered vertically */
+  display:flex; align-items:center; justify-content:center;
+  gap:6px; min-height:120px; text-align:left;
+  max-width: 900px; width: 80%;
+  flex: 1;
+  overflow: hidden;
+}
+.typed{font-size:40px; font-weight:800; line-height:1.25; text-align:left; white-space:pre-wrap}
+.typed.cyan{color:var(--cyan)}
+.typed.white{color:var(--white)}
+
+.cursor{
+  width:20px; height:36px; border-radius:2px; background:var(--cyan);
+  animation: blink 1s steps(1,end) infinite;
+  margin-top:6px;
+  transition: opacity 0.2s ease-in-out;
+  display: none; /* Hidden by default */
+  align-self: flex-start; /* Align to top of flex container */
+  flex-shrink: 0; /* Prevent cursor from shrinking */
+}
+
+/* Text-based cursor styles */
+.text-cursor {
+  display: inline-block;
+  width: 0.6em;
+  height: 1.2em;
+  background: var(--cyan);
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: blink 1s steps(1,end) infinite;
+}
+
+@keyframes blink{50%{opacity:0}}
+
+/* Footer */
+.footer{display:flex; justify-content:flex-end; position: relative; z-index: 1000;}
+.eve-outer{
+  position: fixed; 
+  bottom: 60px; 
+  right: 40px; 
+  z-index: 9999;
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 5px;
+}
+.eve-glow{
+  width:260px; height:46px; border:2px solid var(--hud);
+  border-radius:999px; box-shadow:0 0 18px rgba(60,242,232,.35), inset 0 0 22px rgba(60,242,232,.08);
+}
+.eve-label{
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  font-size:36px; font-weight:800; letter-spacing:.06em; color:var(--cyan)
+}
+
+/* Responsive tweak */
+@media (max-width: 980px){
+  .content-row{grid-template-columns: 1fr}
+  .power{order:2}
+  .console{order:1; min-height:380px}
+}

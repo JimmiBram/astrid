@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1"/>
+  <title>BRAM HOUSE HUD</title>
+
+  <!-- Sci-fi display font -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet"/>
+
+  <link rel="stylesheet" href="/static/styles.css"/>
+</head>
+<body>
+  <div class="hud-wrap">
+    <!-- Top bar -->
+    <div class="top-bar">
+      <div class="corner-frame left">
+        <div class="headline" id="headline">BRAM HOUSE</div>
+      </div>
+
+      <div class="corner-frame right">
+        <div class="timebox">
+          <div><span class="label">StellarDate:</span> <span id="stellardate">—</span></div>
+          <div><span class="label">// Pulse</span> <span id="pulse">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Content area -->
+    <div class="content-row">
+      <!-- Left module (power) -->
+      <div class="module power">
+        <div class="module-frame">
+          <div class="battery-circle">
+            <div class="battery-pct" id="batteryPct">76%</div>
+            <div class="battery-label">BATTERY<br/>CAPACITY</div>
+          </div>
+
+          <div class="dot-columns">
+            <div class="dot-column" id="loadDots"></div>
+            <div class="dot-column" id="sunDots"></div>
+          </div>
+
+          <div class="watts-row">
+            <div class="watts-pill"><span class="mini-label">LOAD</span> <span id="loadW">0W</span></div>
+            <div class="watts-pill"><span class="mini-label">SUN</span> <span id="sunW">0W</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Big center console -->
+      <div class="module console">
+        <div class="module-frame">
+          <div class="console-inner">
+            <div class="console-topline" id="topLine">HELLO ASTRID, HOW ARE MY RESERVE WATER LEVELS?</div>
+
+            <div class="typewrap">
+              <div id="typed" class="typed cyan"></div>
+              <div id="cursor" class="cursor"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer status -->
+    <div class="footer">
+      <div class="eve-outer">
+        <div class="eve-glow"></div>
+        <div class="eve-label" id="eve">EVE</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
