@@ -1,0 +1,38 @@
+<html>
+    <head>
+        <title>Test</title>
+        <style>
+            .octagon {
+          --b:10px; /* the border thickness */
+        
+          width: 200px;
+          aspect-ratio: 1;
+          --o:calc(50%*tan(-22.5deg));
+          --x:calc(var(--b)*cos(22.5deg));
+          --y:calc(var(--b)*sin(22.5deg));
+          clip-path: polygon(    
+            var(--o) 50%,50% var(--o),
+            calc(100% - var(--o)) 50%,    
+            50% calc(100% - var(--o)),var(--o) 50%,
+            calc(50% + var(--o) + var(--y)) var(--x),
+            var(--x) calc(50% + var(--o) + var(--y)),
+            var(--x) calc(50% - var(--o) - var(--y)),
+            calc(50% + var(--o) + var(--y)) calc(100% - var(--x)),
+            calc(50% - var(--o) - var(--y)) calc(100% - var(--x)),
+            calc(100% - var(--x)) calc(50% - var(--o) - var(--y)),
+            calc(100% - var(--x)) calc(50% + var(--o) + var(--y)),
+            calc(50% - var(--o) - var(--y)) var(--x),
+            calc(50% + var(--o) + var(--y)) var(--x)
+          );
+          background: #3B8686; 
+        }
+        </style>
+    </head>
+    <body>
+        <div class="octagon">This is a test</div>
+    </body>
+</html>
+
+
+
+

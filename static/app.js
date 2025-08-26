@@ -45,32 +45,25 @@ function initializeTTS() {
         const voices = speechSynthesis.getVoices();
         console.log('Available voices:', voices.map(v => `${v.name} (${v.lang}) - ${v.default ? 'DEFAULT' : ''}`));
         
-        // Find the best female English voice - prioritizing younger, more attractive voices
-        // Priority: 1) Premium Google voices, 2) Microsoft voices, 3) Any high-quality female English voice
+        // Hardcode UK English Female voice
         selectedVoice = voices.find(voice => 
             voice.name.includes('Google UK English Female') && voice.lang.startsWith('en')
         ) || voices.find(voice => 
-            voice.name.includes('Google US English Female') && voice.lang.startsWith('en')
+            voice.name.includes('UK English Female') && voice.lang.startsWith('en')
         ) || voices.find(voice => 
-            voice.name.includes('Microsoft') && voice.name.includes('Female') && voice.lang.startsWith('en')
-        ) || voices.find(voice => 
-            voice.name.includes('Samantha') && voice.lang.startsWith('en') // macOS default female voice
-        ) || voices.find(voice => 
-            voice.name.includes('Female') && voice.lang.startsWith('en') && voice.name.toLowerCase().includes('premium')
-        ) || voices.find(voice => 
-            voice.name.includes('Female') && voice.lang.startsWith('en') && voice.name.toLowerCase().includes('enhanced')
-        ) || voices.find(voice => 
-            voice.name.includes('Female') && voice.lang.startsWith('en')
-        ) || voices.find(voice => 
-            voice.lang.startsWith('en') && voice.name.toLowerCase().includes('female')
-        ) || voices.find(voice => 
-            voice.lang.startsWith('en')
+            voice.name.includes('Female') && voice.lang.startsWith('en-GB')
         );
         
         if (selectedVoice) {
             console.log('Selected TTS voice:', selectedVoice.name, selectedVoice.lang);
         } else {
-            console.log('No suitable English voice found, using default');
+            console.log('UK English Female voice not found, using default');
+            // Fallback to any English female voice
+            selectedVoice = voices.find(voice => 
+                voice.lang.startsWith('en') && voice.name.toLowerCase().includes('female')
+            ) || voices.find(voice => 
+                voice.lang.startsWith('en')
+            );
         }
         
         // Force a voice change by updating the TTS controls
@@ -114,6 +107,16 @@ function stopTTS() {
 // Initialize TTS when page loads
 initializeTTS();
 
+// Function to display initial greeting when page loads
+function displayInitialGreeting() {
+  // Wait a moment for the page to fully load, then show greeting
+  setTimeout(() => {
+    if (!typing && !userTyping) {
+      typeText("Hello! Welcome to BRAM HOUSE. I'm ASTRID, your AI assistant. How may I help you today?", "cyan", 25);
+    }
+  }, 1000);
+}
+
 // Build dot columns (10 each)
 function buildDots(container) {
   container.innerHTML = "";
@@ -152,8 +155,8 @@ async function typeText(text, colorClass="cyan", cps=20) {
   // Create utterance for the full text
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.voice = selectedVoice;
-  utterance.rate = 0.85; // Slightly slower for more natural, seductive pace
-  utterance.pitch = 0.95; // Slightly lower pitch for more mature, attractive sound
+  utterance.rate = 1; // Slightly slower for more natural, seductive pace
+  utterance.pitch = 1.2; // Slightly lower pitch for more mature, attractive sound
   utterance.volume = 0.9; // Slightly higher volume for presence
   utterance.lang = 'en-US'; // US English for more natural Scarlett-like accent
   
@@ -238,17 +241,11 @@ function addTTSControls() {
     controlsDiv.innerHTML = `
         <div style="margin-bottom: 10px; font-weight: bold;">ASTRID TTS Controls</div>
         <div style="margin-bottom: 8px;">
-            <button id="tts-toggle" style="background: var(--hud); color: var(--bg); border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-right: 5px;">Enable TTS</button>
+            <button id="tts-toggle" style="background: var(--hud); color: var(--bg); border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-right: 5px;">Disable TTS</button>
             <button id="tts-stop" style="background: var(--hud-dim); color: var(--bg); border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">Stop Speech</button>
         </div>
-        <div style="margin-bottom: 8px;">
-            <label for="voice-select" style="font-size: 12px; display: block; margin-bottom: 4px;">Voice:</label>
-            <select id="voice-select" style="background: var(--bg); color: var(--cyan); border: 1px solid var(--hud); padding: 4px; border-radius: 4px; font-size: 12px; width: 100%;">
-                <option value="">Loading voices...</option>
-            </select>
-        </div>
         <div style="font-size: 12px; opacity: 0.8;">
-            <div>Shortcuts: Space=Stop, T=Toggle</div>
+            <div>Shortcuts: Space = Stop</div>
         </div>
     `;
     
@@ -264,7 +261,6 @@ function addTTSControls() {
     // Add event listeners
     document.getElementById('tts-toggle').addEventListener('click', toggleTTS);
     document.getElementById('tts-stop').addEventListener('click', stopTTS);
-    document.getElementById('voice-select').addEventListener('change', changeVoice);
     
     // Update voice display
     updateVoiceDisplay();
@@ -285,44 +281,10 @@ function toggleTTS() {
 
 // Update voice display
 function updateVoiceDisplay() {
-    const voiceSelect = document.getElementById('voice-select');
-    if (!voiceSelect) return;
-    
-    const voices = speechSynthesis.getVoices();
-    voiceSelect.innerHTML = '';
-    
-    // Add default option
-    const defaultOption = document.createElement('option');
-    defaultOption.value = '';
-    defaultOption.textContent = 'Select a voice...';
-    voiceSelect.appendChild(defaultOption);
-    
-    // Add all available voices
-    voices.forEach((voice, index) => {
-        const option = document.createElement('option');
-        option.value = index;
-        option.textContent = `${voice.name} (${voice.lang})`;
-        if (voice === selectedVoice) {
-            option.selected = true;
-        }
-        voiceSelect.appendChild(option);
-    });
-    
-    console.log('Voice selector updated with', voices.length, 'voices');
-}
-
-// Function to change voice
-function changeVoice(event) {
-    const voiceIndex = parseInt(event.target.value);
-    if (isNaN(voiceIndex)) return;
-    
-    const voices = speechSynthesis.getVoices();
-    if (voiceIndex >= 0 && voiceIndex < voices.length) {
-        selectedVoice = voices[voiceIndex];
-        console.log('Voice changed to:', selectedVoice.name, selectedVoice.lang);
-        
-        // Test the new voice with a short message
-        speakText('Voice changed successfully', { rate: 0.85, pitch: 0.95, volume: 0.9 });
+    if (selectedVoice) {
+        console.log('TTS voice set to:', selectedVoice.name, selectedVoice.lang);
+    } else {
+        console.log('No TTS voice selected');
     }
 }
 
@@ -393,7 +355,10 @@ document.addEventListener("keydown", (ev) => {
 // Initialize TTS controls
 addTTSControls();
 
-// Format “StellarDate” like 202.508.26 for 2025-08-26
+// Display initial greeting when page loads
+displayInitialGreeting();
+
+// Format "StellarDate" like 202.508.26 for 2025-08-26
 function formatStellarDate(d) {
   const yyyy = String(d.getFullYear());
   const mm = String(d.getMonth()+1).padStart(2,"0");
