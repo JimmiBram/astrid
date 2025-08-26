@@ -43,13 +43,22 @@ function initializeTTS() {
     // Wait for voices to load
     speechSynthesis.onvoiceschanged = () => {
         const voices = speechSynthesis.getVoices();
+        console.log('Available voices:', voices.map(v => `${v.name} (${v.lang}) - ${v.default ? 'DEFAULT' : ''}`));
         
-        // Find the best female English voice
-        // Priority: 1) Google UK English Female, 2) Google US English Female, 3) Any female English voice
+        // Find the best female English voice - prioritizing younger, more attractive voices
+        // Priority: 1) Premium Google voices, 2) Microsoft voices, 3) Any high-quality female English voice
         selectedVoice = voices.find(voice => 
             voice.name.includes('Google UK English Female') && voice.lang.startsWith('en')
         ) || voices.find(voice => 
             voice.name.includes('Google US English Female') && voice.lang.startsWith('en')
+        ) || voices.find(voice => 
+            voice.name.includes('Microsoft') && voice.name.includes('Female') && voice.lang.startsWith('en')
+        ) || voices.find(voice => 
+            voice.name.includes('Samantha') && voice.lang.startsWith('en') // macOS default female voice
+        ) || voices.find(voice => 
+            voice.name.includes('Female') && voice.lang.startsWith('en') && voice.name.toLowerCase().includes('premium')
+        ) || voices.find(voice => 
+            voice.name.includes('Female') && voice.lang.startsWith('en') && voice.name.toLowerCase().includes('enhanced')
         ) || voices.find(voice => 
             voice.name.includes('Female') && voice.lang.startsWith('en')
         ) || voices.find(voice => 
@@ -63,10 +72,19 @@ function initializeTTS() {
         } else {
             console.log('No suitable English voice found, using default');
         }
+        
+        // Force a voice change by updating the TTS controls
+        updateVoiceDisplay();
     };
     
     // Trigger voices loading
     speechSynthesis.getVoices();
+    
+    // Also try to get voices immediately in case they're already loaded
+    const immediateVoices = speechSynthesis.getVoices();
+    if (immediateVoices.length > 0) {
+        console.log('Immediate voices available:', immediateVoices.map(v => `${v.name} (${v.lang})`));
+    }
 }
 
 // Function to speak text with high quality
@@ -134,17 +152,17 @@ async function typeText(text, colorClass="cyan", cps=20) {
   // Create utterance for the full text
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.voice = selectedVoice;
-  utterance.rate = 0.9;
-  utterance.pitch = 1.0;
-  utterance.volume = 0.8;
-  utterance.lang = 'en-GB';
+  utterance.rate = 0.85; // Slightly slower for more natural, seductive pace
+  utterance.pitch = 0.95; // Slightly lower pitch for more mature, attractive sound
+  utterance.volume = 0.9; // Slightly higher volume for presence
+  utterance.lang = 'en-US'; // US English for more natural Scarlett-like accent
   
   // Start speaking immediately
   speechSynthesis.speak(utterance);
   
   // Calculate timing based on speech rate and text length
   // Rate 0.9 means speech is 90% of normal speed
-  const baseTimePerWord = 400; // Base time per word in milliseconds
+  const baseTimePerWord = 250; // Reduced from 400ms to 250ms for better sync
   const adjustedTimePerWord = baseTimePerWord / 0.9; // Adjust for speech rate
   
   // Display words progressively to match speech timing
@@ -223,8 +241,13 @@ function addTTSControls() {
             <button id="tts-toggle" style="background: var(--hud); color: var(--bg); border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-right: 5px;">Enable TTS</button>
             <button id="tts-stop" style="background: var(--hud-dim); color: var(--bg); border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">Stop Speech</button>
         </div>
+        <div style="margin-bottom: 8px;">
+            <label for="voice-select" style="font-size: 12px; display: block; margin-bottom: 4px;">Voice:</label>
+            <select id="voice-select" style="background: var(--bg); color: var(--cyan); border: 1px solid var(--hud); padding: 4px; border-radius: 4px; font-size: 12px; width: 100%;">
+                <option value="">Loading voices...</option>
+            </select>
+        </div>
         <div style="font-size: 12px; opacity: 0.8;">
-            <div>Voice: <span id="current-voice">Loading...</span></div>
             <div>Shortcuts: Space=Stop, T=Toggle</div>
         </div>
     `;
@@ -241,6 +264,7 @@ function addTTSControls() {
     // Add event listeners
     document.getElementById('tts-toggle').addEventListener('click', toggleTTS);
     document.getElementById('tts-stop').addEventListener('click', stopTTS);
+    document.getElementById('voice-select').addEventListener('change', changeVoice);
     
     // Update voice display
     updateVoiceDisplay();
@@ -261,9 +285,44 @@ function toggleTTS() {
 
 // Update voice display
 function updateVoiceDisplay() {
-    const voiceSpan = document.getElementById('current-voice');
-    if (voiceSpan && selectedVoice) {
-        voiceSpan.textContent = selectedVoice.name;
+    const voiceSelect = document.getElementById('voice-select');
+    if (!voiceSelect) return;
+    
+    const voices = speechSynthesis.getVoices();
+    voiceSelect.innerHTML = '';
+    
+    // Add default option
+    const defaultOption = document.createElement('option');
+    defaultOption.value = '';
+    defaultOption.textContent = 'Select a voice...';
+    voiceSelect.appendChild(defaultOption);
+    
+    // Add all available voices
+    voices.forEach((voice, index) => {
+        const option = document.createElement('option');
+        option.value = index;
+        option.textContent = `${voice.name} (${voice.lang})`;
+        if (voice === selectedVoice) {
+            option.selected = true;
+        }
+        voiceSelect.appendChild(option);
+    });
+    
+    console.log('Voice selector updated with', voices.length, 'voices');
+}
+
+// Function to change voice
+function changeVoice(event) {
+    const voiceIndex = parseInt(event.target.value);
+    if (isNaN(voiceIndex)) return;
+    
+    const voices = speechSynthesis.getVoices();
+    if (voiceIndex >= 0 && voiceIndex < voices.length) {
+        selectedVoice = voices[voiceIndex];
+        console.log('Voice changed to:', selectedVoice.name, selectedVoice.lang);
+        
+        // Test the new voice with a short message
+        speakText('Voice changed successfully', { rate: 0.85, pitch: 0.95, volume: 0.9 });
     }
 }
 
