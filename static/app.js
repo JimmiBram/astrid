@@ -125,16 +125,38 @@ async function typeText(text, colorClass="cyan", cps=20) {
   els.typed.textContent = "";
   els.cursor.style.display = "none"; // Hide the CSS cursor since we're using text-based cursor
   
-  // Split text into words for better TTS
+  // Split text into words for coordinated display
   const words = text.split(' ');
   let currentText = '';
   
+  console.log('Starting TTS with words:', words);
+  
+  // Create utterance for the full text
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.voice = selectedVoice;
+  utterance.rate = 0.9;
+  utterance.pitch = 1.0;
+  utterance.volume = 0.8;
+  utterance.lang = 'en-GB';
+  
+  // Start speaking immediately
+  speechSynthesis.speak(utterance);
+  
+  // Calculate timing based on speech rate and text length
+  // Rate 0.9 means speech is 90% of normal speed
+  const baseTimePerWord = 400; // Base time per word in milliseconds
+  const adjustedTimePerWord = baseTimePerWord / 0.9; // Adjust for speech rate
+  
+  // Display words progressively to match speech timing
   for (let i = 0; i < words.length; i++) {
     if (userTyping) { // user interrupted
       els.typed.textContent = "";
       typing = false;
       return;
     }
+    
+    // Wait for the calculated time for this word
+    await new Promise(r => setTimeout(r, adjustedTimePerWord));
     
     // Add the word with a space (except for first word)
     if (i === 0) {
@@ -144,12 +166,7 @@ async function typeText(text, colorClass="cyan", cps=20) {
     }
     
     els.typed.textContent = currentText;
-    
-    // Speak the word as it appears
-    speakText(words[i], { rate: 0.8, volume: 0.9 });
-    
-    // Wait for the word to be spoken before showing the next one
-    await new Promise(r => setTimeout(r, 800)); // Wait 800ms for each word
+    console.log('Displayed word:', words[i], 'at index:', i);
   }
   
   typing = false;
