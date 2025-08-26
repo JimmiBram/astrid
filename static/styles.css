@@ -14,9 +14,22 @@ body{
   color:var(--cyan);
   font-family:'Orbitron',system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
   letter-spacing:.02em;
+  min-width: 1267px;
+  min-height: 850px;
+  overflow: auto;
+  position: relative;
 }
 
-.hud-wrap{padding:24px; display:flex; flex-direction:column; gap:24px; height:100%}
+.hud-wrap{
+  padding:24px; 
+  display:flex; 
+  flex-direction:column; 
+  gap:24px; 
+  height:100%;
+  width: 100%;
+  position: relative;
+  transform-origin: center;
+}
 
 /* “Corner frame” look */
 .corner-frame{
@@ -40,11 +53,12 @@ body{
   display:grid;
   grid-template-columns: 1fr auto;
   gap:24px;
-  align-items:center;
+  align-items:stretch;
 }
 .headline{font-size:42px; font-weight:900; color:var(--cyan); text-shadow:0 0 12px rgba(127,253,245,.45)}
-.timebox{display:flex; gap:24px; align-items:center; font-size:16px}
+.timebox{display:flex; flex-direction:column; gap:8px; justify-content:center; font-size:16px; height:100%}
 .timebox .label{color:var(--hud-dim); margin-right:8px}
+.time-row{display:flex; align-items:center}
 
 /* Layout main row */
 .content-row{display:grid; grid-template-columns: 280px 1fr; gap:24px; flex:1; align-items: stretch;}
@@ -168,4 +182,25 @@ body{
   .content-row{grid-template-columns: 1fr}
   .power{order:2}
   .console{order:1; min-height:380px}
+}
+
+/* Ensure proper scaling behavior */
+html {
+  overflow-x: auto;
+  overflow-y: auto;
+}
+
+body {
+  position: relative;
+}
+
+/* Prevent content from moving during scaling */
+.hud-wrap {
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* Ensure all content scales together */
+.hud-wrap > * {
+  transform-origin: center;
 }

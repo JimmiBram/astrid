@@ -1,18 +1,169 @@
 // ----- WebSocket setup -----
 const ws = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/ws");
 
+// Connection status tracking
+let isConnected = false;
+let offlineStartTime = null;
+let reconnectInterval = null;
+
+// Create offline popup overlay
+let offlinePopup = null;
+
+// Create size warning popup overlay
+let sizeWarningPopup = null;
+
+// Minimum page dimensions
+const MIN_WIDTH = 1267;
+const MIN_HEIGHT = 850;
+
+// Function to check page size and show warning if needed
+function checkPageSize() {
+    const currentWidth = window.innerWidth;
+    const currentHeight = window.innerHeight;
+    
+    // Show warning if EITHER width or height is below the minimum
+    if (currentWidth < MIN_WIDTH || currentHeight < MIN_HEIGHT) {
+        showSizeWarningPopup();
+    } else {
+        hideSizeWarningPopup();
+    }
+}
+
+// Function to show size warning popup
+function showSizeWarningPopup() {
+    if (sizeWarningPopup) return; // Already showing
+    
+    sizeWarningPopup = document.createElement('div');
+    sizeWarningPopup.id = 'size-warning-popup';
+    sizeWarningPopup.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 9998;
+        font-family: 'Orbitron', monospace;
+        color: var(--cyan);
+    `;
+    
+    sizeWarningPopup.innerHTML = `
+        <div style="text-align: center;">
+            <div style="font-size: 2.5rem; font-weight: bold; margin-bottom: 1rem; color: #ffaa00;">BROWSER WINDOW TOO SMALL</div>
+            <div style="font-size: 1.5rem; margin-bottom: 2rem;">ASTRID requires at least 1267x850 pixels</div>
+            <div style="font-size: 1.2rem; margin-bottom: 1rem;">Current size: ${window.innerWidth}x${window.innerHeight}</div>
+            <div style="font-size: 1rem; margin-top: 1rem; opacity: 0.7;">Please resize your browser window</div>
+        </div>
+    `;
+    
+    document.body.appendChild(sizeWarningPopup);
+}
+
+// Function to hide size warning popup
+function hideSizeWarningPopup() {
+    if (sizeWarningPopup) {
+        sizeWarningPopup.remove();
+        sizeWarningPopup = null;
+    }
+}
+
+// Function to show offline popup
+function showOfflinePopup() {
+    if (offlinePopup) return; // Already showing
+    
+    offlinePopup = document.createElement('div');
+    offlinePopup.id = 'offline-popup';
+    offlinePopup.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        font-family: 'Orbitron', monospace;
+        color: var(--cyan);
+    `;
+    
+    offlinePopup.innerHTML = `
+        <div style="text-align: center;">
+            <div style="font-size: 3rem; font-weight: bold; margin-bottom: 1rem; color: #ff4444;">ASTRID OFFLINE</div>
+            <div style="font-size: 1.5rem; margin-bottom: 2rem;">Reconnecting...</div>
+            <div style="font-size: 2rem; font-weight: bold;" id="offline-counter">0</div>
+            <div style="font-size: 1rem; margin-top: 1rem; opacity: 0.7;">seconds offline</div>
+        </div>
+    `;
+    
+    document.body.appendChild(offlinePopup);
+    
+    // Start the counter
+    updateOfflineCounter();
+}
+
+// Function to hide offline popup
+function hideOfflinePopup() {
+    if (offlinePopup) {
+        offlinePopup.remove();
+        offlinePopup = null;
+    }
+}
+
+// Function to update offline counter
+function updateOfflineCounter() {
+    if (!offlinePopup || !offlineStartTime) return;
+    
+    const counterElement = document.getElementById('offline-counter');
+    if (counterElement) {
+        const secondsOffline = Math.floor((Date.now() - offlineStartTime) / 1000);
+        counterElement.textContent = secondsOffline;
+    }
+    
+    // Continue updating every second if still offline
+    if (!isConnected) {
+        setTimeout(updateOfflineCounter, 1000);
+    }
+}
+
 // Add debugging for WebSocket connection
 ws.onopen = () => {
     console.log("WebSocket connected successfully");
+    isConnected = true;
+    offlineStartTime = null;
+    hideOfflinePopup();
     ws.send(JSON.stringify({type:"request_state"}));
 };
 
 ws.onerror = (error) => {
     console.error("WebSocket error:", error);
+    if (!isConnected) {
+        showOfflinePopup();
+    }
 };
 
 ws.onclose = (event) => {
     console.log("WebSocket closed:", event.code, event.reason);
+    isConnected = false;
+    offlineStartTime = Date.now();
+    showOfflinePopup();
+    
+    // Try to reconnect every 5 seconds
+    if (reconnectInterval) {
+        clearInterval(reconnectInterval);
+    }
+    reconnectInterval = setInterval(() => {
+        if (!isConnected) {
+            console.log("Attempting to reconnect...");
+            location.reload();
+        }
+    }, 5000);
 };
 
 const els = {
@@ -65,9 +216,6 @@ function initializeTTS() {
                 voice.lang.startsWith('en')
             );
         }
-        
-        // Force a voice change by updating the TTS controls
-        updateVoiceDisplay();
     };
     
     // Trigger voices loading
@@ -116,6 +264,49 @@ function displayInitialGreeting() {
     }
   }, 1000);
 }
+
+// Function to apply responsive scaling
+function applyResponsiveScaling() {
+    const currentWidth = window.innerWidth;
+    const currentHeight = window.innerHeight;
+    
+    // Calculate scale factors for both directions
+    const scaleX = currentWidth / MIN_WIDTH;
+    const scaleY = currentHeight / MIN_HEIGHT;
+    const scale = Math.min(scaleX, scaleY); // Use the smaller scale to fit both dimensions
+    
+    // Apply scaling to the main container
+    const hudWrap = document.querySelector('.hud-wrap');
+    if (hudWrap) {
+        // Apply scaling and centering in one clean transform
+        hudWrap.style.transform = `translate(-50%, -50%) scale(${scale})`;
+        hudWrap.style.width = `${MIN_WIDTH}px`;
+        hudWrap.style.height = `${MIN_HEIGHT}px`;
+        
+        // Center the content
+        hudWrap.style.position = 'absolute';
+        hudWrap.style.left = '50%';
+        hudWrap.style.top = '50%';
+        
+        // Update the size warning popup if it exists
+        if (sizeWarningPopup) {
+            const currentSizeText = sizeWarningPopup.querySelector('div:nth-child(3)');
+            if (currentSizeText) {
+                currentSizeText.textContent = `Current size: ${currentWidth}x${currentHeight}`;
+            }
+        }
+    }
+}
+
+// Add window resize event listener
+window.addEventListener('resize', () => {
+    checkPageSize();
+    applyResponsiveScaling();
+});
+
+// Check initial page size and apply scaling
+checkPageSize();
+applyResponsiveScaling();
 
 // Build dot columns (10 each)
 function buildDots(container) {
@@ -221,73 +412,6 @@ function removeTextCursor() {
   }
 }
 
-// Add TTS controls to the page
-function addTTSControls() {
-    const controlsDiv = document.createElement('div');
-    controlsDiv.id = 'tts-controls';
-    controlsDiv.style.cssText = `
-        background: rgba(11, 15, 18, 0.9);
-        border: 2px solid var(--hud);
-        border-radius: 10px;
-        padding: 15px;
-        color: var(--cyan);
-        font-family: 'Orbitron', monospace;
-        font-size: 14px;
-        margin-top: 20px;
-        backdrop-filter: blur(10px);
-        flex-shrink: 0;
-    `;
-    
-    controlsDiv.innerHTML = `
-        <div style="margin-bottom: 10px; font-weight: bold;">ASTRID TTS Controls</div>
-        <div style="margin-bottom: 8px;">
-            <button id="tts-toggle" style="background: var(--hud); color: var(--bg); border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-right: 5px;">Disable TTS</button>
-            <button id="tts-stop" style="background: var(--hud-dim); color: var(--bg); border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">Stop Speech</button>
-        </div>
-        <div style="font-size: 12px; opacity: 0.8;">
-            <div>Shortcuts: Space = Stop</div>
-        </div>
-    `;
-    
-    // Insert the controls after the power module
-    const powerModule = document.querySelector('.power');
-    if (powerModule) {
-        powerModule.appendChild(controlsDiv);
-    } else {
-        // Fallback: append to body if power module not found
-        document.body.appendChild(controlsDiv);
-    }
-    
-    // Add event listeners
-    document.getElementById('tts-toggle').addEventListener('click', toggleTTS);
-    document.getElementById('tts-stop').addEventListener('click', stopTTS);
-    
-    // Update voice display
-    updateVoiceDisplay();
-}
-
-// Toggle TTS on/off
-let ttsEnabled = true;
-function toggleTTS() {
-    ttsEnabled = !ttsEnabled;
-    const button = document.getElementById('tts-toggle');
-    button.textContent = ttsEnabled ? 'Disable TTS' : 'Enable TTS';
-    button.style.background = ttsEnabled ? 'var(--hud)' : 'var(--hud-dim)';
-    
-    if (!ttsEnabled) {
-        stopTTS();
-    }
-}
-
-// Update voice display
-function updateVoiceDisplay() {
-    if (selectedVoice) {
-        console.log('TTS voice set to:', selectedVoice.name, selectedVoice.lang);
-    } else {
-        console.log('No TTS voice selected');
-    }
-}
-
 // Add keyboard shortcuts
 document.addEventListener("keydown", (ev) => {
   // TTS shortcuts (only when not typing)
@@ -298,7 +422,7 @@ document.addEventListener("keydown", (ev) => {
       return;
     } else if (ev.code === 'KeyT' && ev.ctrlKey) {
       ev.preventDefault();
-      toggleTTS();
+      // toggleTTS(); // This function is removed, so this line is removed
       return;
     }
   }
@@ -352,11 +476,25 @@ document.addEventListener("keydown", (ev) => {
   addTextCursor();
 });
 
-// Initialize TTS controls
-addTTSControls();
-
 // Display initial greeting when page loads
 displayInitialGreeting();
+
+// Add periodic connection check - more conservative approach
+setInterval(() => {
+    if (!isConnected && ws.readyState === WebSocket.OPEN) {
+        // Don't refresh immediately - wait for actual server communication
+        console.log("WebSocket appears open but marked as disconnected - waiting for server response");
+    }
+}, 2000); // Check every 2 seconds
+
+// Handle page visibility changes (user switching tabs) - more conservative
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && !isConnected) {
+        // User came back to the tab and we're disconnected
+        console.log("Page became visible, but waiting for server response before refreshing...");
+        // Don't refresh immediately - wait for actual server communication
+    }
+});
 
 // Format "StellarDate" like 202.508.26 for 2025-08-26
 function formatStellarDate(d) {
@@ -365,11 +503,12 @@ function formatStellarDate(d) {
   const dd = String(d.getDate()).padStart(2,"0");
   return `${yyyy.slice(0,3)}.${yyyy.slice(3)}${mm}.${dd}`;
 }
-// Pulse as HH.MM (from 14:35 -> 14.35)
+// Pulse as HH.MM.SS (from 17:54:01 -> 17.54.01)
 function formatPulse(d) {
   const hh = String(d.getHours()).padStart(2,"0");
   const mm = String(d.getMinutes()).padStart(2,"0");
-  return `${hh}.${mm}`;
+  const ss = String(d.getSeconds()).padStart(2,"0");
+  return `${hh}.${mm}.${ss}`;
 }
 
 // Tick clock
@@ -379,7 +518,7 @@ function tickClock(){
   els.pulse.textContent = formatPulse(now);
 }
 tickClock();
-setInterval(tickClock, 1000*15);
+setInterval(tickClock, 1000); // Update every second since we're showing seconds
 
 
 // Apply full state update
@@ -402,6 +541,13 @@ ws.onmessage = async (ev) => {
   console.log("WebSocket message received:", ev.data);
   const msg = JSON.parse(ev.data);
   console.log("Parsed message:", msg);
+  
+  // If we were disconnected and now receiving messages, server is back online
+  if (!isConnected && msg.type) {
+    console.log("Server is back online! Refreshing page...");
+    location.reload();
+    return;
+  }
   
   if (msg.type === "state"){
     console.log("Applying state update");
