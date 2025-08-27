@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "astrid"
+version = "0.1.0"
+description = "A very simplistic AI assistant with personality for everywhere and everything"
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+packages = [{ include = "astrid" }]
+
+[tool.poetry.dependencies]
+python = ">=3.9,<4.0"
+fastapi = "^0.111.0"
+uvicorn = { version = "^0.30.0", extras = ["standard"] }
+jinja2 = "^3.1.0"
+
+[tool.poetry.scripts]
+start-astrid = "astrid.main:main"
+
+[build-system]
+requires = ["poetry-core>=1.9.0"]
+build-backend = "poetry.core.masonry.api"

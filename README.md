@@ -1,11 +1,12 @@
 # astrid
 A very simplistic AI assistant with personality for everywhere and everything
 
-# how to run it
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn main:app --reload
+## Run with Poetry
+- Install Poetry: https://python-poetry.org/docs/#installation
+- Install deps: `poetry install`
+- Run dev server:
+  - `poetry run start-astrid`
+  - or `poetry run uvicorn astrid.main:app --reload`
 
 Open: http://localhost:8000
 
